@@ -107,12 +107,12 @@ int main( int argc, char** argv )
 	int    imgWidth  = 0;
 	int    imgHeight = 0;
 		
+	
 	if( !loadImageRGBA(imgFilename, (float4**)&imgCPU, (float4**)&imgCUDA, &imgWidth, &imgHeight) )
 	{
 		printf("failed to load image '%s'\n", imgFilename);
 		return 0;
-	}
-
+	} 
 
 	/*
 	 * allocate output image
