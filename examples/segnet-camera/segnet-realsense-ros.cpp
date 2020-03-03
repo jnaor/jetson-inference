@@ -24,8 +24,13 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "cudaMappedMemory.h"
+// TODO: delete this
+// #include <fstream>
+// std::ofstream error_log("/home/wizzy/Desktop/drek_main.txt");
 
+
+#include "cudaMappedMemory.h"
+#include "imageIO.h"
 #include "segNet.h"
 
 #include <signal.h>
@@ -86,17 +91,21 @@ public:
 	// processing
 	bool process(cv::Mat rgb, cv::Mat depth)
 	{
-		// matrices for color and type conversions
-		cv::Mat rgba, float_rgba; 
+		// to hold pointer to image in CPU/GPU shared memory
+		float* imgCPU = 0;
 
-		// convert to RGBA image
-		cv::cvtColor(rgb, rgba, cv::COLOR_RGB2RGBA);
+		// to hold pointer in CUDA memory
+		float* imgCUDA  = 0;
 
-		// convert to float
-		rgba.convertTo(float_rgba, CV_32FC4);
+		// subtract mean from image (or not)
+		float4 mean_pixel = make_float4(0, 0, 0, 0);
+
+		// upload to gpu
+		uploadImageToGPU(rgb.data, m_width, m_height, 3, true, (void**) &imgCPU, 
+						(void**) &imgCUDA, (void*) &mean_pixel);
 
 		// process the segmentation network
-		if( !m_net->Process((float*) float_rgba.data, m_width, m_height) )
+		if( !m_net->Process(imgCUDA, m_width, m_height) )
 		{
 			std::cerr << "segnet-console:  failed to process segmentation" << std::endl;
 		}
@@ -136,8 +145,9 @@ private:
 
 int main()
 {
-	cv::Mat rgb = cv::imread("rgb.png");
-	cv::Mat depth = cv::imread("depth.png");
+
+	cv::Mat rgb = cv::imread("/home/wizzy/Desktop/rgb.png");
+	cv::Mat depth = cv::imread("/home/wizzy/Desktop/depth.png");
 	
 	Segmenter segmenter(rgb.cols, rgb.rows);
 	
